@@ -58,35 +58,36 @@ class OrchestratorAgent:
     async def process_job(self, job_id: str, file_paths: Dict):
         """
         Bir işin tüm adımlarını (Parse, Grade, Verify, Report) asenkron olarak çalıştırır.
-        Bu metod, FastAPI'nin BackgroundTasks'ı tarafından tetiklenir.
+        (Artık engelleyici çağrılar için asyncio.to_thread kullanıyor)
         """
         job = self.jobs[job_id]
         job.status = "processing"
         
         try:
-            # 1. Cevap anahtarını parse et
+            # --- Engelleyici Dosya Okuma İşlemleri ---
+            # Bunları ayrı bir thread'de çalıştırarak ana döngüyü kilitlemiyoruz.
             with open(file_paths["answer_key"], "rb") as f:
-                question_objects = parse_answer_key(f)
+                key_content = f.read()
+            question_objects = await asyncio.to_thread(parse_answer_key, key_content)
             
-            # 2. Her öğrenci kağıdı için döngü başlat
             for student_path in file_paths["student_sheets"]:
-                student_id = student_path.stem # Dosya adını student_id olarak kullan
+                student_id = student_path.stem
                 
                 with open(student_path, "rb") as f:
-                    student_answers = parse_student_answers(f, student_id)
+                    student_content = f.read()
+                student_answers = await asyncio.to_thread(parse_student_answers, student_content, student_id)
                 
                 all_results_for_student = []
                 
-                # 3. Her soru için döngü başlat
                 for question in question_objects:
                     student_answer = next((ans for ans in student_answers if ans.question_id == question.question_id), None)
                     if not student_answer: continue
 
-                    # 4. Modüler işlem hattını çalıştır
-                    raw_result = self.grader.grade_question(question, student_answer, job_id)
-                    verified_result = self.verifier.verify_grading_result(raw_result)
+                    # --- Engelleyici Ajan Çağrıları ---
+                    # Her bir ajan çağrısını ayrı bir thread'de çalıştırıyoruz.
+                    raw_result = await asyncio.to_thread(self.grader.grade_question, question, student_answer, job_id)
+                    verified_result = await asyncio.to_thread(self.verifier.verify_grading_result, raw_result)
                     
-                    # 5. Anlık sonucu (partial result) kuyruğa koy
                     event = schemas.StreamEvent(
                         event="partial_result",
                         data=verified_result.model_dump(mode="json")
@@ -94,9 +95,9 @@ class OrchestratorAgent:
                     await job.results_queue.put(event)
                     all_results_for_student.append(verified_result)
 
-                # Öğrenci bittiğinde, raporunu oluştur ve kuyruğa koy
                 if all_results_for_student:
-                    summary_text = self.reporter.generate_summary_report(all_results_for_student)
+                    # Raporlama da bir LLM çağrısı olduğu için engelleyicidir.
+                    summary_text = await asyncio.to_thread(self.reporter.generate_summary_report, all_results_for_student)
                     student_done_event = schemas.StreamEvent(
                         event="student_summary",
                         data={"student_id": student_id, "summary_report": summary_text}
@@ -108,9 +109,12 @@ class OrchestratorAgent:
         
         except Exception as e:
             job.status = "failed"
+            # Hatanın izini sürmek için daha detaylı loglama
+            import traceback
+            print(f"Job {job_id} failed with error: {e}")
+            traceback.print_exc()
             error_event = schemas.StreamEvent(event="error", data={"message": str(e)})
             await job.results_queue.put(error_event)
         
         finally:
-            # Sinyal: Kuyruğun sonuna geldiğimizi belirtmek için None koyuyoruz.
             await job.results_queue.put(None)

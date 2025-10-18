@@ -76,7 +76,9 @@ async def start_sample_job(background_tasks: BackgroundTasks):
         "answer_key": base_path / "answer_key.pdf",
         "student_sheets": [
             base_path / "student_1.pdf",
-            base_path / "student_2.pdf" # İkinci öğrenciyi de ekleyelim
+            base_path / "student_2.pdf",
+            base_path / "student_3.pdf",
+            base_path / "student_4.pdf",
         ]
     }
     
