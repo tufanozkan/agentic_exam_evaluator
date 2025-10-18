@@ -7,6 +7,8 @@ from typing import List
 from pathlib import Path
 
 from . import schemas
+from fastapi import WebSocket # YENİ
+from .services.connection_manager import manager # YENİ
 from .orchestrator import OrchestratorAgent
 from .services.streamer_service import Job # Job sınıfını yeni yerinden import ediyoruz
 
@@ -87,3 +89,15 @@ async def stream_job_results(job_id: str):
             yield f"data: {event.model_dump_json()}\n\n"
             
     return StreamingResponse(event_generator(), media_type="text/event-stream")
+
+@app.websocket("/api/jobs/{job_id}/ws")
+async def websocket_endpoint(websocket: WebSocket, job_id: str):
+    await manager.connect(websocket, job_id)
+    try:
+        # Bağlantı açık kaldığı sürece beklemede kal
+        while True:
+            # İsteğe bağlı: Frontend'den gelecek mesajları dinleyebilirsin
+            # Şimdilik sadece bağlantıyı açık tutuyoruz.
+            await websocket.receive_text()
+    except Exception:
+        manager.disconnect(job_id)

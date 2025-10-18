@@ -5,6 +5,7 @@ import uuid
 from pathlib import Path
 from typing import Dict, List
 import aiofiles
+import traceback
 
 from fastapi import UploadFile
 
@@ -16,8 +17,10 @@ from .agents.feedback_agent import FeedbackAgent
 from .agents.summary_agent import SummaryAgent
 from .agents.storage_agent import StorageAgent
 from .services.streamer_service import Job
+from .services.connection_manager import manager  # ConnectionManager'ı import et
 
 class OrchestratorAgent:
+    # ... (__init__, create_job, save_uploaded_files metodları aynı) ...
     def __init__(self):
         self.jobs: Dict[str, Job] = {}
         self.upload_dir = Path("temp_uploads")
@@ -53,6 +56,7 @@ class OrchestratorAgent:
             paths["student_sheets"].append(student_path)
         return paths
 
+    # --- TAMAMEN GÜNCELLENMİŞ process_job METODU ---
     async def process_job(self, job_id: str, file_paths: Dict):
         job = self.jobs.get(job_id)
         if not job: return
@@ -79,7 +83,7 @@ class OrchestratorAgent:
 
                     raw_result = await asyncio.to_thread(self.grader_agent.grade_question, question, student_answer, job_id)
                     verified_result = await asyncio.to_thread(self.verifier_agent.verify_grading_result, raw_result)
-
+                    
                     feedback_text = await asyncio.to_thread(
                         self.feedback_agent.generate_feedback_for_question,
                         verified_result,
@@ -87,18 +91,14 @@ class OrchestratorAgent:
                         question.question_text
                     )
                     
-                    # Sonucu event verisine ekleyelim
                     result_data = verified_result.model_dump(mode="json")
                     result_data['friendly_feedback'] = feedback_text
                     
-                    event = schemas.StreamEvent(
-                        event="partial_result",
-                        data=result_data  # Zenginleştirilmiş veriyi gönder
-                    )
-                    await job.results_queue.put(event)
-                    all_results_for_student.append(verified_result)
+                    event = schemas.StreamEvent(event="partial_result", data=result_data)
+                    # DÜZELTME: Kuyruk yerine manager kullan
+                    await manager.send_event_to_job(event.model_dump_json(), job_id)
                     
-                    # StorageAgent, her doğrulanmış sonucu kaydeder
+                    all_results_for_student.append(verified_result)
                     await asyncio.to_thread(self.storage_agent.save_result, verified_result)
 
                 if all_results_for_student:
@@ -107,18 +107,21 @@ class OrchestratorAgent:
                         event="student_summary",
                         data={"student_id": student_id, "summary_report": summary_text}
                     )
-                    await job.results_queue.put(student_done_event)
+                    # DÜZELTME: Kuyruk yerine manager kullan
+                    await manager.send_event_to_job(student_done_event.model_dump_json(), job_id)
 
             job.status = "completed"
-            await job.results_queue.put(schemas.StreamEvent(event="job_done", data={"job_id": job_id}))
+            job_done_event = schemas.StreamEvent(event="job_done", data={"job_id": job_id})
+            # DÜZELTME: Kuyruk yerine manager kullan
+            await manager.send_event_to_job(job_done_event.model_dump_json(), job_id)
         
         except Exception as e:
             job.status = "failed"
-            import traceback
             print(f"Job {job_id} failed with error: {e}")
             traceback.print_exc()
             error_event = schemas.StreamEvent(event="error", data={"message": str(e)})
-            await job.results_queue.put(error_event)
+            # DÜZELTME: Kuyruk yerine manager kullan (Hata durumunda da)
+            await manager.send_event_to_job(error_event.model_dump_json(), job_id)
         
-        finally:
-            await job.results_queue.put(None)
+        # 'finally' bloğuna artık gerek yok çünkü disconnect işlemini main.py'deki
+        # websocket_endpoint'in kendisi yapıyor.

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>SSE Stream Test</title>
+    <style>
+        body { font-family: sans-serif; background: #f0f0f0; }
+        #container { max-width: 800px; margin: auto; background: white; padding: 20px; }
+        pre { background-color: #eee; padding: 10px; border-radius: 5px; white-space: pre-wrap; word-wrap: break-word; }
+        .event-partial { border-left: 5px solid #007bff; }
+        .event-summary { border-left: 5px solid #28a745; }
+        .event-done { border-left: 5px solid #ffc107; }
+        .event-error { border-left: 5px solid #dc3545; }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <h1>Real-time Assessment Results</h1>
+        <input type="text" id="jobIdInput" placeholder="Enter Job ID here">
+        <button onclick="startStream()">Connect to Stream</button>
+        <hr>
+        <div id="results"></div>
+    </div>
+    <script>
+        let eventSource;
+        function startStream() {
+            let jobId = document.getElementById('jobIdInput').value;
+            const resultsDiv = document.getElementById('results');
+
+            // --- YENİ: GİRDİ TEMİZLEME ---
+            // Tırnakları ve baştaki/sondaki boşlukları temizle.
+            jobId = jobId.trim().replace(/"/g, ''); 
+
+            if (!jobId) {
+                resultsDiv.innerHTML = '<p>Please enter a Job ID.</p>';
+                return;
+            }
+            resultsDiv.innerHTML = `<p>Connecting to stream for Job ID: <strong>${jobId}</strong>...</p>`;
+            
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            const url = `http://127.0.0.1:8000/api/jobs/${jobId}/stream`;
+            eventSource = new EventSource(url);
+
+            // --- YENİ: BAĞLANTI BAŞARILI OLDUĞUNDA ---
+            eventSource.onopen = function(event) {
+                const p = document.createElement('p');
+                p.style.color = 'green';
+                p.textContent = 'Connection established! Waiting for results...';
+                resultsDiv.appendChild(p);
+            };
+
+            eventSource.onmessage = function(event) {
+                try {
+                    const eventData = JSON.parse(event.data);
+                    const eventType = eventData.event;
+                    const data = eventData.data;
+
+                    const pre = document.createElement('pre');
+                    // CSS sınıfını event tipine göre ayarla
+                    pre.className = `event-${eventType.split('_')[0]}`; 
+                    pre.innerHTML = `<strong>Event: ${eventType}</strong>\n` + JSON.stringify(data, null, 2);
+                    resultsDiv.insertBefore(pre, resultsDiv.firstChild);
+                } catch (e) {
+                    console.error("Failed to parse JSON data:", event.data, e);
+                    const pre = document.createElement('pre');
+                    pre.className = 'event-error';
+                    pre.innerHTML = `<strong>UNPARSABLE DATA RECEIVED:</strong>\n${event.data}`;
+                    resultsDiv.insertBefore(pre, resultsDiv.firstChild);
+                }
+            };
+
+            eventSource.onerror = function(err) {
+                const p = document.createElement('p');
+                p.style.color = 'red';
+                p.textContent = 'Stream connection closed or an error occurred. Check browser console (F12) for details.';
+                resultsDiv.appendChild(p);
+                console.error("EventSource failed:", err);
+                eventSource.close();
+            };
+        }
+    </script>
+</body>
+</html>
