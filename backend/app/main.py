@@ -75,35 +75,57 @@ async def handle_followup_query(
 # Ajanlarımızı import ediyoruz
 from .parser import parse_answer_key, parse_student_answers
 from .evaluator import GraderAgent
+from .reporting import ReportingAgent # YENİ
 
-# GraderAgent'tan bir nesne oluşturuyoruz
+# Ajan nesnelerini oluşturuyoruz
 grader = GraderAgent()
+reporter = ReportingAgent() # YENİ
 
-@app.post("/api/test/grade-single", tags=["Testing"])
-async def test_grade_single(
+# ... (@app.get("/") ve diğer endpoint'ler aynı kalacak) ...
+
+@app.post("/api/test/grade-single-full-flow", response_model=schemas.FinalReport, tags=["Testing"])
+async def test_grade_single_full_flow(
     answer_key_pdf: UploadFile = File(...),
     student_sheet_pdf: UploadFile = File(...)
 ):
     """
-    Test amacıyla tek bir öğrenci kağıdını ve cevap anahtarını alıp,
-    ilk soruyu notlandırır ve sonucu direkt döner.
+    Test amacıyla tam bir akışı çalıştırır: Parse -> Grade -> Feedback -> Summary.
+    Tek bir soru üzerinden tüm ajanların çıktısını birleştirerek nihai bir rapor döner.
     """
-    # 1. PDF'leri parse et
+    # 1. Parse Agent
     question_objects = parse_answer_key(answer_key_pdf.file)
     student_answers = parse_student_answers(student_sheet_pdf.file, student_id="test_student_01")
 
-    if not question_objects or not student_answers:
-        return {"error": "Could not parse questions or answers from PDFs."}
-        
-    # 2. İlk soruyu ve cevabı eşleştir
+    # (Bu kısım MVP için basitleştirilmiştir. Normalde tüm sorular döngüye girer.)
     first_question = question_objects[0]
-    first_answer = next((ans for ans in student_answers if ans.question_id == first_question.question_id), None)
-
-    if not first_answer:
-        return {"error": "No matching answer found for the first question."}
-
-    # 3. GraderAgent'ı çağır ve notlandır
-    job_id = "test_job_123"
-    grading_result = grader.grade_question(first_question, first_answer, job_id)
+    first_answer = student_answers[0]
     
-    return grading_result
+    # 2. Grader Agent
+    job_id = "test_job_full_flow"
+    grading_result = grader.grade_question(first_question, first_answer, job_id)
+
+    # 3. Feedback Agent
+    feedback_text = reporter.generate_feedback_for_question(
+        grading_result=grading_result,
+        student_answer_text=first_answer.student_answer_text
+    )
+    question_feedback = schemas.QuestionFeedback(
+        question_id=first_question.question_id,
+        feedback_text=feedback_text,
+        grading_result=grading_result
+    )
+
+    # 4. Summary Agent (tek soru üzerinden simülasyon)
+    summary_text = reporter.generate_summary_report(all_graded_results=[grading_result])
+    
+    # 5. Nihai Raporu Oluştur
+    final_report = schemas.FinalReport(
+        job_id=job_id,
+        student_id="test_student_01",
+        overall_score=grading_result.score,
+        max_score=grading_result.max_score,
+        summary_report_text=summary_text,
+        question_feedbacks=[question_feedback]
+    )
+    
+    return final_report

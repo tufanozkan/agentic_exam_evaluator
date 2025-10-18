@@ -57,3 +57,18 @@ class GradingResult(BaseModel):
     model_params: Dict[str, Any]
     timestamp: datetime = Field(default_factory=datetime.utcnow)
     verifier_status: VerifierStatus
+
+class QuestionFeedback(BaseModel):
+    """Tek bir soru için üretilen zenginleştirilmiş geri bildirim."""
+    question_id: str
+    feedback_text: str
+    grading_result: GradingResult # Orijinal sonucu da içerir
+
+class FinalReport(BaseModel):
+    """Bir öğrenci için oluşturulan nihai rapor."""
+    job_id: str
+    student_id: str
+    overall_score: float
+    max_score: float
+    summary_report_text: str
+    question_feedbacks: List[QuestionFeedback]
