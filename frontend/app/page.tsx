@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-// YENİ: Silme ikonu için Trash2'yi import ediyoruz
 import { FileText, CheckCircle, XCircle, Trash2 } from 'lucide-react';
 import ResultsDisplay, { type StreamEvent } from "@/components/ResultsDisplay";
 
@@ -12,7 +11,6 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // GÜNCELLENDİ: Dosyaları değiştirmek yerine üzerine eklemek için
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileType: 'key' | 'student') => {
     if (e.target.files) {
       if (fileType === 'key') {
@@ -20,23 +18,19 @@ export default function HomePage() {
       } else {
         const newFiles = Array.from(e.target.files);
         setStudentSheetFiles(prevFiles => {
-          // Zaten eklenmiş olan dosyaları filtreleyerek sadece yenileri ekle
           const existingFileNames = new Set(prevFiles.map(f => f.name));
           const uniqueNewFiles = newFiles.filter(f => !existingFileNames.has(f.name));
           return [...prevFiles, ...uniqueNewFiles];
         });
       }
     }
-    // Aynı dosyayı tekrar seçebilmek için input'un değerini sıfırla
     e.target.value = '';
   };
 
-  // YENİ: Dosya silme fonksiyonu
   const handleRemoveStudentFile = (fileNameToRemove: string) => {
     setStudentSheetFiles(prevFiles => prevFiles.filter(file => file.name !== fileNameToRemove));
   };
   
-  // handleSubmit ve useEffect fonksiyonları aynı kalabilir...
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!answerKeyFile || studentSheetFiles.length === 0) {
@@ -81,7 +75,7 @@ export default function HomePage() {
         const type = payload.event;
         const payloadData = payload.data;
         setEvents((prev) => [ ...prev, { type, payload: payloadData, timestamp: new Date().toISOString() } ]);
-      } catch (err) { console.warn("WebSocket verisi JSON değil:", event.data); }
+  } catch (err) { console.warn("WebSocket verisi JSON değil:", event.data, err); }
     };
     socket.onerror = (err) => { console.error("WebSocket hatası:", err); setError("Bağlantı hatası oluştu."); };
     socket.onclose = () => { console.log("WebSocket bağlantısı kapandı."); };
@@ -94,7 +88,6 @@ export default function HomePage() {
         <div className="max-w-xl w-full bg-white p-8 rounded-lg shadow-md">
             <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">AI Exam Evaluation System</h1>
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Cevap Anahtarı Yükleme Alanı (Aynı) */}
             <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">1. Upload Answer Key (PDF)</label>
               <div className="mt-1 flex items-center space-x-4 p-4 border-2 border-gray-300 border-dashed rounded-md">
@@ -107,7 +100,6 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* GÜNCELLENDİ: Öğrenci Kağıtları Yükleme Alanı ve Listesi */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">2. Upload Student Sheets (One or Multiple PDF)</label>
               <div className="mt-1 p-4 border-2 border-gray-300 border-dashed rounded-md">
@@ -119,7 +111,6 @@ export default function HomePage() {
                   </label>
                   {studentSheetFiles.length > 0 && <p className="text-sm text-gray-600">{studentSheetFiles.length} files selected.</p>}
                 </div>
-                {/* YENİ: Seçilen dosyaları listeleme */}
                 {studentSheetFiles.length > 0 && (
                   <ul className="mt-4 space-y-2">
                     {studentSheetFiles.map((file) => (
@@ -154,7 +145,6 @@ export default function HomePage() {
     );
   }
 
-  // Sonuç ekranı (Aynı)
   return (
     <main className="container mx-auto p-4 md:p-8">
       <div className="flex justify-between items-center mb-6">

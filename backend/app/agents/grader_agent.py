@@ -6,18 +6,15 @@ from pathlib import Path
 from typing import Dict, Any
 from datetime import datetime
 
-# Şemaları ve ayarları import ediyoruz
 from .. import schemas
 from ..config import settings
 
 class GraderAgent:
     def __init__(self):
-        # OpenAI istemcisini API anahtarımızla başlatıyoruz
         if not settings.OPENAI_API_KEY:
             raise ValueError("OPENAI_API_KEY environment variable not set!")
         self.client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
         
-        # Prompt şablonunu dosyadan okuyoruz
         current_dir = Path(__file__).parent
         prompt_file = current_dir.parent.parent / "prompts" / "grader_prompt.txt"
         
@@ -43,8 +40,7 @@ class GraderAgent:
         llm_raw_response = ""
         llm_response_data = {}
         
-        # Bu ajan artık doğrulama yapmıyor, sadece LLM'den veri almaya odaklanıyor.
-        # Doğrulama, bir sonraki ajan olan VerifierAgent'a devredildi.
+        #bu agent doğrulama yapmıyor sadece llmden veri alma işi
         try:
             response = self.client.chat.completions.create(
                 model="gpt-4o-mini",
@@ -59,8 +55,6 @@ class GraderAgent:
             llm_response_data = json.loads(llm_raw_response)
 
         except Exception as e:
-            # Hata durumunda, sonraki ajanın incelemesi için boş bir sonuç oluşturuyoruz.
-            # VerifierAgent bu durumu yakalayacak.
             print(f"LLM call or JSON parsing failed: {e}")
             llm_response_data = {
                 "justification": f"LLM Error: {str(e)}",
@@ -68,7 +62,7 @@ class GraderAgent:
                 "rubric_breakdown": {}
             }
         
-        # VerifierAgent'ın işlemesi için varsayılan bir statü ile sonuç nesnesi oluştur.
+        #verifier agent başlangıç
         initial_verifier_status = schemas.VerifierStatus(
             valid=False, 
             issues=["Verification has not been run yet."]
@@ -78,11 +72,8 @@ class GraderAgent:
             job_id=job_id,
             student_id=student_answer.student_id,
             question_id=question.question_id,
-            
-            # --- YENİ ALANLARI BURADA DOLDUR ---
             question_text=question.question_text,
             student_answer_text=student_answer.student_answer_text,
-            # --- YENİ ALANLARIN SONU ---
             
             score=llm_response_data.get("score", 0),
             max_score=question.max_score,

@@ -1,4 +1,4 @@
-# backend/app/main.py
+#backend/app/main.py
 
 from fastapi import FastAPI, UploadFile, File, BackgroundTasks, HTTPException
 from fastapi.responses import StreamingResponse
@@ -7,17 +7,17 @@ from typing import List
 from pathlib import Path
 
 from . import schemas
-from fastapi import WebSocket # YENİ
-from .services.connection_manager import manager # YENİ
+from fastapi import WebSocket
+from .services.connection_manager import manager
 from .orchestrator import OrchestratorAgent
-from .services.streamer_service import Job # Job sınıfını yeni yerinden import ediyoruz
-from .agents.follow_up_agent import FollowUpAgent # YENİ
+from .services.streamer_service import Job
+from .agents.follow_up_agent import FollowUpAgent #last added
 import asyncio
 
 app = FastAPI(
     title="AI-Driven Exam Evaluator Agent",
     description="An agentic system for automated exam assessment with explainability.",
-    version="1.0.0" # Refactoring bitti, 1.0.0'a geçebiliriz!
+    version="1.0.0"
 )
 
 origins = ["*"]
@@ -29,14 +29,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Tek bir Orchestrator nesnesi oluşturuyoruz
+#tek orchestrator
 orchestrator = OrchestratorAgent()
-follow_up_agent = FollowUpAgent(storage_agent=orchestrator.storage_agent) # YENİ
+follow_up_agent = FollowUpAgent(storage_agent=orchestrator.storage_agent)
 
 class FollowUpQuery(schemas.BaseModel):
     query: str
 
-# --- YENİ: FOLLOW-UP ENDPOINT'İ ---
+
 @app.post("/api/followup/{job_id}/{student_id}/{question_id}", tags=["Explainability"])
 async def handle_followup_query(
     job_id: str,
@@ -75,12 +75,9 @@ async def create_assessment_job(
 async def start_sample_job(background_tasks: BackgroundTasks):
     job = orchestrator.create_job()
     
-    # --- DÜZELTME: Dosya yolunu daha sağlam hale getirelim ---
-    # main.py dosyasının konumunu alıp, oradan 2 seviye yukarı çıkarak
-    # projenin kök dizinine ulaşıyoruz.
+    #kök dizin
     project_root = Path(__file__).parent.parent.parent
     base_path = project_root / "test_files"
-    # --- DÜZELTME SONU ---
     
     file_paths = {
         "answer_key": base_path / "answer_key.pdf",
@@ -91,7 +88,6 @@ async def start_sample_job(background_tasks: BackgroundTasks):
     }
     
     if not all(p.exists() for p in [file_paths["answer_key"]] + file_paths["student_sheets"]):
-        # Hata mesajını daha bilgilendirici hale getirelim
         raise HTTPException(status_code=404, 
             detail=f"Sample PDF files not found. Searched in: '{base_path.resolve()}'")
 
@@ -117,10 +113,8 @@ async def stream_job_results(job_id: str):
 async def websocket_endpoint(websocket: WebSocket, job_id: str):
     await manager.connect(websocket, job_id)
     try:
-        # Bağlantı açık kaldığı sürece beklemede kal
+        #bağlantı açık beklemede
         while True:
-            # İsteğe bağlı: Frontend'den gelecek mesajları dinleyebilirsin
-            # Şimdilik sadece bağlantıyı açık tutuyoruz.
             await websocket.receive_text()
     except Exception:
         manager.disconnect(job_id)

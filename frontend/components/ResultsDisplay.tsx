@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Check, AlertCircle, Clock, PartyPopper, Send, Bot } from 'lucide-react';
 
-// Tip Tanımlamaları
 interface GradingResultPayload {
   job_id: string;
   student_id: string;
@@ -25,8 +24,6 @@ export interface StreamEvent {
   timestamp: string;
 }
 
-
-// --- YENİ: Her bir soru kartını ve kendi içindeki sohbet durumunu yöneten alt component ---
 function QuestionResultCard({ result }: { result: GradingResultPayload }) {
   const [currentQuery, setCurrentQuery] = useState('');
   const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'ai', content: string }[]>([]);
@@ -37,10 +34,9 @@ function QuestionResultCard({ result }: { result: GradingResultPayload }) {
     if (!currentQuery) return;
     
     setIsLoading(true);
-    // Kullanıcının mesajını anında sohbete ekle
     setChatHistory(prev => [...prev, { role: 'user', content: currentQuery }]);
     const queryToSend = currentQuery;
-    setCurrentQuery(''); // Input'u temizle
+    setCurrentQuery('');
 
     try {
       const apiResponse = await fetch(`http://127.0.0.1:8000/api/followup/${result.job_id}/${result.student_id}/${result.question_id}`, {
@@ -50,9 +46,9 @@ function QuestionResultCard({ result }: { result: GradingResultPayload }) {
       });
       if (!apiResponse.ok) throw new Error('API request failed');
       const data = await apiResponse.json();
-      // AI'ın cevabını sohbete ekle
       setChatHistory(prev => [...prev, { role: 'ai', content: data.answer }]);
     } catch (error) {
+      console.error('Follow-up API error:', error);
       setChatHistory(prev => [...prev, { role: 'ai', content: 'Soruya cevap alınamadı. Lütfen tekrar deneyin.' }]);
     } finally {
       setIsLoading(false);
@@ -61,7 +57,6 @@ function QuestionResultCard({ result }: { result: GradingResultPayload }) {
 
   return (
     <div className="border border-gray-400 p-4 rounded-md bg-gray-200">
-      {/* Puanlama kısmı aynı */}
       <div className="flex justify-between items-center">
         <h3 className="font-bold text-lg text-gray-800">{result.question_id}</h3>
         <span className={`font-bold px-3 py-1 rounded-full text-sm ${result.score > result.max_score / 2 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
@@ -69,10 +64,8 @@ function QuestionResultCard({ result }: { result: GradingResultPayload }) {
         </span>
       </div>
       {result.friendly_feedback && <p className="mt-3 bg-blue-50 border-l-4 border-blue-400 p-3 text-sm text-gray-700">{result.friendly_feedback}</p>}
-      
-      {/* --- GÜNCELLENMİŞ SOHBET BÖLÜMÜ --- */}
+
       <div className="mt-4 space-y-3">
-        {/* Sohbet Geçmişi */}
         {chatHistory.map((msg, index) => (
           <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
             {msg.role === 'ai' && <div className="bg-indigo-600 text-white p-2 rounded-full flex-shrink-0"><Bot size={16} /></div>}
@@ -83,14 +76,12 @@ function QuestionResultCard({ result }: { result: GradingResultPayload }) {
         ))}
         {isLoading && <p className="text-sm text-gray-500 mt-2 flex items-center"><Clock size={14} className="animate-spin mr-1"/> AI is thinking...</p>}
 
-        {/* Soru Sorma Formu */}
         <form onSubmit={handleFollowUp} className="flex items-center space-x-2 pt-2">
           <input type="text" value={currentQuery} onChange={(e) => setCurrentQuery(e.target.value)} placeholder="Ask a follow-up question..." className="flex-grow p-2 border border-gray-300 rounded-md text-sm bg-black text-white" disabled={isLoading} />
           <button type="submit" className="bg-black text-white p-2 rounded-md hover:bg-gray-800 disabled:bg-gray-400" disabled={isLoading}><Send size={18} /></button>
         </form>
       </div>
-      
-      {/* Teknik Detaylar kısmı aynı */}
+
       <details className="mt-3">
         <summary className="cursor-pointer text-xs text-yellow-700">Show Technical Details</summary>
         <div className="mt-2 p-3 rounded text-xs text-gray-600 space-y-2">
@@ -103,8 +94,6 @@ function QuestionResultCard({ result }: { result: GradingResultPayload }) {
   );
 }
 
-
-// Ana Display Component'i
 export default function ResultsDisplay({ events }: { events: StreamEvent[] }) {
   const jobStartedEvent = events.find(e => e.type === 'job_started');
   const totalQuestions = jobStartedEvent ? (jobStartedEvent.payload as JobStartedPayload).total_questions : 0;

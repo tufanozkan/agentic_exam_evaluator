@@ -5,7 +5,6 @@ from fastapi import WebSocket
 
 class ConnectionManager:
     def __init__(self):
-        # Aktif bağlantıları job_id'ye göre saklayacak bir sözlük
         self.active_connections: Dict[str, WebSocket] = {}
 
     async def connect(self, websocket: WebSocket, job_id: str):
@@ -21,5 +20,5 @@ class ConnectionManager:
             websocket = self.active_connections[job_id]
             await websocket.send_text(event_json)
 
-# Tüm uygulama boyunca kullanılacak tek bir yönetici nesnesi
+#manager instance
 manager = ConnectionManager()

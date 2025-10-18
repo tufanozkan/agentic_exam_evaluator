@@ -3,8 +3,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime
 from typing import Union
 
-# --- Metadata Alt Modelleri ---
-# Bu modeller, verinin nereden geldiğini ve ne kadar güvenilir olduğunu belirtir.
+#nerden geliyor, ne kadar güvenli vs..
 
 class PDFMetadata(BaseModel):
     page: int
@@ -17,10 +16,12 @@ class OCRMetadata(BaseModel):
 class VerifierStatus(BaseModel):
     valid: bool
     issues: List[str] = []
+    was_corrected: bool = False
+    correction_attempts: int = 0
     suggested_correction: Optional[Dict[str, Any]] = None
 
-# --- Ana Agent Kontratları ---
 
+#agents 
 class QuestionObject(BaseModel):
     """PDFParserAgent tarafından üretilen, bir sorunun yapısal temsili."""
     question_id: str
@@ -52,8 +53,6 @@ class GradingResult(BaseModel):
     rubric_breakdown: Dict[str, float]
     justification: str
     advice_for_full_marks: str
-    
-    # Denetim (Audit Trail) Alanları - Jüri için kritik!
     llm_prompt: str
     llm_raw_response: str
     model: str
@@ -65,7 +64,7 @@ class QuestionFeedback(BaseModel):
     """Tek bir soru için üretilen zenginleştirilmiş geri bildirim."""
     question_id: str
     feedback_text: str
-    grading_result: GradingResult # Orijinal sonucu da içerir
+    grading_result: GradingResult
 
 class FinalReport(BaseModel):
     """Bir öğrenci için oluşturulan nihai rapor."""

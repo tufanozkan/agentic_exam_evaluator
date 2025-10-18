@@ -9,10 +9,9 @@ from .normalizer_agent import NormalizerAgent
 
 class PDFParserAgent:
     def __init__(self):
-        # Normalizer ajanı, bu sınıfın bir parçası olarak başlatılıyor
+        #bu sınıfın bir parçası
         self.normalizer = NormalizerAgent()
 
-    # --- FONKSİYON SINIF İÇİNE ALINDI (METOT OLDU) ---
     def parse_answer_key(self, file_content: bytes) -> List[schemas.QuestionObject]:
         file = BytesIO(file_content)
         text = ""
@@ -20,7 +19,7 @@ class PDFParserAgent:
             for page in pdf.pages:
                 page_text = page.extract_text()
                 if page_text:
-                    # NormalizerAgent burada kullanılıyor
+                    #normalizer agent
                     text += self.normalizer.normalize(page_text) + "\n"
 
         questions = []
@@ -30,11 +29,10 @@ class PDFParserAgent:
             try:
                 match = re.match(r'(Soru \d+:.*?[\?\.])(.*)', block, re.DOTALL)
                 if match:
-                    # NormalizerAgent burada kullanılıyor
+                    #normalizer agent
                     question_text = self.normalizer.normalize(match.group(1))
                     expected_answer = self.normalizer.normalize(match.group(2))
                 else:
-                    # Eşleşme olmazsa fallback
                     question_text = block.split('\n')[0]
                     expected_answer = block.replace(question_text, '')
                 
@@ -51,7 +49,6 @@ class PDFParserAgent:
                 continue
         return questions
 
-    # --- FONKSİYON SINIF İÇİNE ALINDI (METOT OLDU) ---
     def parse_student_answers(self, file_content: bytes, student_id: str) -> List[schemas.StudentAnswerObject]:
         file = BytesIO(file_content)
         text = ""
@@ -59,7 +56,7 @@ class PDFParserAgent:
             for page in pdf.pages:
                 page_text = page.extract_text()
                 if page_text:
-                    # NormalizerAgent burada kullanılıyor
+                    #normalizer agent
                     text += self.normalizer.normalize(page_text) + "\n"
 
         answers = []
@@ -70,7 +67,7 @@ class PDFParserAgent:
                 answer_match = re.search(r'Cevap:(.*)', block, re.DOTALL | re.IGNORECASE)
                 answer_text = ""
                 if answer_match:
-                    # NormalizerAgent burada kullanılıyor
+                    #normalizer agent
                     answer_text = self.normalizer.normalize(answer_match.group(1))
                 
                 answers.append(schemas.StudentAnswerObject(

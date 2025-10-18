@@ -9,8 +9,7 @@ from .. import schemas, config
 class SummaryAgent:
     def __init__(self):
         self.client = openai.OpenAI(api_key=config.settings.OPENAI_API_KEY)
-        
-        # --- DÜZELTME BURADA ---
+
         current_dir = Path(__file__).parent
         prompt_file = current_dir.parent.parent / "prompts" / "summary_prompt.txt"
 
@@ -18,7 +17,6 @@ class SummaryAgent:
             self.summary_prompt_template = f.read()
 
     def generate_summary_report(self, all_graded_results: List[schemas.GradingResult]) -> str:
-        # --- DÜZELTME BURADA: mode='json' EKLENDİ ---
         results_for_prompt = [
             result.model_dump(mode='json', exclude={'llm_prompt', 'llm_raw_response'}) 
             for result in all_graded_results
@@ -28,7 +26,6 @@ class SummaryAgent:
             all_graded_results=json.dumps(results_for_prompt, indent=2)
         )
         try:
-            # ... (geri kalan kod aynı) ...
             response = self.client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[{"role": "user", "content": prompt}],

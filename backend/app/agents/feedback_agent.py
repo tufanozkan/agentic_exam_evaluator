@@ -9,7 +9,6 @@ class FeedbackAgent:
     def __init__(self):
         self.client = openai.OpenAI(api_key=config.settings.OPENAI_API_KEY)
         
-        # --- DÜZELTME BURADA ---
         current_dir = Path(__file__).parent
         prompt_file = current_dir.parent.parent / "prompts" / "feedback_prompt.txt"
 
