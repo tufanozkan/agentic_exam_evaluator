@@ -67,6 +67,13 @@ class OrchestratorAgent:
             with open(file_paths["answer_key"], "rb") as f:
                 key_content = f.read()
             question_objects = await asyncio.to_thread(self.parser_agent.parse_answer_key, key_content)
+
+            total_questions = len(question_objects)
+            initial_event = schemas.StreamEvent(
+                event="job_started",
+                data={"total_questions": total_questions}
+            )
+            await manager.send_event_to_job(initial_event.model_dump_json(), job_id)
             
             for student_path in file_paths["student_sheets"]:
                 student_id = student_path.stem
