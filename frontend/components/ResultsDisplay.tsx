@@ -28,26 +28,32 @@ export interface StreamEvent {
 
 // --- YENİ: Her bir soru kartını ve kendi içindeki sohbet durumunu yöneten alt component ---
 function QuestionResultCard({ result }: { result: GradingResultPayload }) {
-  const [query, setQuery] = useState('');
-  const [response, setResponse] = useState('');
+  const [currentQuery, setCurrentQuery] = useState('');
+  const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'ai', content: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleFollowUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!query) return;
+    if (!currentQuery) return;
+    
     setIsLoading(true);
-    setResponse('');
+    // Kullanıcının mesajını anında sohbete ekle
+    setChatHistory(prev => [...prev, { role: 'user', content: currentQuery }]);
+    const queryToSend = currentQuery;
+    setCurrentQuery(''); // Input'u temizle
+
     try {
       const apiResponse = await fetch(`http://127.0.0.1:8000/api/followup/${result.job_id}/${result.student_id}/${result.question_id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: query }),
+        body: JSON.stringify({ query: queryToSend }),
       });
       if (!apiResponse.ok) throw new Error('API request failed');
       const data = await apiResponse.json();
-      setResponse(data.answer);
+      // AI'ın cevabını sohbete ekle
+      setChatHistory(prev => [...prev, { role: 'ai', content: data.answer }]);
     } catch (error) {
-      setResponse('Could not get an answer. Please try again.');
+      setChatHistory(prev => [...prev, { role: 'ai', content: 'Soruya cevap alınamadı. Lütfen tekrar deneyin.' }]);
     } finally {
       setIsLoading(false);
     }
@@ -55,50 +61,42 @@ function QuestionResultCard({ result }: { result: GradingResultPayload }) {
 
   return (
     <div className="border border-gray-400 p-4 rounded-md bg-gray-200">
+      {/* Puanlama kısmı aynı */}
       <div className="flex justify-between items-center">
         <h3 className="font-bold text-lg text-gray-800">{result.question_id}</h3>
         <span className={`font-bold px-3 py-1 rounded-full text-sm ${result.score > result.max_score / 2 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
           Points: {result.score} / {result.max_score}
         </span>
       </div>
-
-      {result.friendly_feedback && (
-        <p className="mt-3 bg-blue-50 border-l-4 border-blue-400 p-3 text-sm text-gray-700">{result.friendly_feedback}</p>
-      )}
-
-      {/* --- İSTEĞİN ÜZERİNE EKLENEN SOHBET BÖLÜMÜ --- */}
-      <div className="mt-4">
-        <form onSubmit={handleFollowUp} className="flex items-center space-x-2">
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Ask AI about this grade..."
-            className="flex-grow p-2 border border-gray-300 rounded-md text-sm bg-black text-white"
-            disabled={isLoading}
-          />
-          <button type="submit" className="bg-indigo-600 text-white p-2 rounded-md hover:bg-indigo-700 disabled:bg-gray-400" disabled={isLoading}>
-            <Send size={18} />
-          </button>
-        </form>
-        {isLoading && <p className="text-sm text-gray-500 mt-2 flex items-center"><Clock size={14} className="animate-spin mr-1"/> AI is thinking...</p>}
-        {response && (
-            <div className="mt-3 bg-indigo-50 border-l-4 border-indigo-400 p-3 text-sm text-gray-800 flex">
-                <Bot size={20} className="mr-3 flex-shrink-0 mt-1"/>
-                <p>{response}</p>
+      {result.friendly_feedback && <p className="mt-3 bg-blue-50 border-l-4 border-blue-400 p-3 text-sm text-gray-700">{result.friendly_feedback}</p>}
+      
+      {/* --- GÜNCELLENMİŞ SOHBET BÖLÜMÜ --- */}
+      <div className="mt-4 space-y-3">
+        {/* Sohbet Geçmişi */}
+        {chatHistory.map((msg, index) => (
+          <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
+            {msg.role === 'ai' && <div className="bg-indigo-600 text-white p-2 rounded-full flex-shrink-0"><Bot size={16} /></div>}
+            <div className={`p-3 rounded-lg max-w-xs ${msg.role === 'ai' ? 'bg-black text-white' : 'bg-blue-500 text-white'}`}>
+              <p className="text-sm">{msg.content}</p>
             </div>
-        )}
+          </div>
+        ))}
+        {isLoading && <p className="text-sm text-gray-500 mt-2 flex items-center"><Clock size={14} className="animate-spin mr-1"/> AI is thinking...</p>}
+
+        {/* Soru Sorma Formu */}
+        <form onSubmit={handleFollowUp} className="flex items-center space-x-2 pt-2">
+          <input type="text" value={currentQuery} onChange={(e) => setCurrentQuery(e.target.value)} placeholder="Ask a follow-up question..." className="flex-grow p-2 border border-gray-300 rounded-md text-sm bg-black text-white" disabled={isLoading} />
+          <button type="submit" className="bg-black text-white p-2 rounded-md hover:bg-gray-800 disabled:bg-gray-400" disabled={isLoading}><Send size={18} /></button>
+        </form>
       </div>
       
+      {/* Teknik Detaylar kısmı aynı */}
       <details className="mt-3">
         <summary className="cursor-pointer text-xs text-yellow-700">Show Technical Details</summary>
         <div className="mt-2 p-3 rounded text-xs text-gray-600 space-y-2">
           <p><strong>Justification:</strong> {result.justification}</p>
-          {result.verifier_status.valid ? (
-            <p className="text-green-600 flex items-center"><Check size={14} className="mr-1"/> Verification Successful</p>
-          ) : (
-            <p className="text-red-600 flex items-center"><AlertCircle size={14} className="mr-1"/> Verification Error: {result.verifier_status.issues.join(', ')}</p>
-          )}
+          {result.verifier_status.valid ? (<p className="text-green-600 flex items-center"><Check size={14} className="mr-1"/> Verification Successful</p>) 
+          : (<p className="text-red-600 flex items-center"><AlertCircle size={14} className="mr-1"/> Verification Error: {result.verifier_status.issues.join(', ')}</p>)}
         </div>
       </details>
     </div>
