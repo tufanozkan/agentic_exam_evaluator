@@ -47,6 +47,8 @@ class GradingResult(BaseModel):
     question_id: str
     score: float
     max_score: int
+    question_text: str
+    student_answer_text: str
     rubric_breakdown: Dict[str, float]
     justification: str
     advice_for_full_marks: str
@@ -84,3 +86,6 @@ class StreamEvent(BaseModel):
 class JobStatus(BaseModel):
     job_id: str
     status: str
+
+class FollowUpQuery(BaseModel):
+    query: str

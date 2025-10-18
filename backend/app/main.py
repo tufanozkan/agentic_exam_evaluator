@@ -11,6 +11,8 @@ from fastapi import WebSocket # YENİ
 from .services.connection_manager import manager # YENİ
 from .orchestrator import OrchestratorAgent
 from .services.streamer_service import Job # Job sınıfını yeni yerinden import ediyoruz
+from .agents.follow_up_agent import FollowUpAgent # YENİ
+import asyncio
 
 app = FastAPI(
     title="AI-Driven Exam Evaluator Agent",
@@ -29,6 +31,27 @@ app.add_middleware(
 
 # Tek bir Orchestrator nesnesi oluşturuyoruz
 orchestrator = OrchestratorAgent()
+follow_up_agent = FollowUpAgent(storage_agent=orchestrator.storage_agent) # YENİ
+
+class FollowUpQuery(schemas.BaseModel):
+    query: str
+
+# --- YENİ: FOLLOW-UP ENDPOINT'İ ---
+@app.post("/api/followup/{job_id}/{student_id}/{question_id}", tags=["Explainability"])
+async def handle_followup_query(
+    job_id: str,
+    student_id: str,
+    question_id: str,
+    request: FollowUpQuery
+):
+    try:
+        answer = await asyncio.to_thread(
+            follow_up_agent.answer_query,
+            job_id, student_id, question_id, request.query
+        )
+        return {"answer": answer}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/", tags=["Health Check"])
 async def read_root():

@@ -109,7 +109,7 @@ export default function HomePage() {
 
             {/* GÜNCELLENDİ: Öğrenci Kağıtları Yükleme Alanı ve Listesi */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">2. Upload Student Sheets (Multiple PDF)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">2. Upload Student Sheets (One or Multiple PDF)</label>
               <div className="mt-1 p-4 border-2 border-gray-300 border-dashed rounded-md">
                 <div className="flex items-center space-x-4">
                   <FileText className="h-12 w-12 text-gray-400" />
