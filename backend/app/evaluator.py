@@ -29,7 +29,6 @@ class GraderAgent:
         job_id: str
     ) -> schemas.GradingResult:
         
-        # Prompt'ı ilgili bilgilerle dolduruyoruz
         prompt = self.prompt_template.format(
             question_text=question.question_text,
             expected_answer=question.expected_answer,
@@ -40,37 +39,38 @@ class GraderAgent:
 
         llm_raw_response = ""
         llm_response_data = {}
-        is_valid = False
-        issues = []
-
+        
+        # Bu ajan artık doğrulama yapmıyor, sadece LLM'den veri almaya odaklanıyor.
+        # Doğrulama, bir sonraki ajan olan VerifierAgent'a devredildi.
         try:
-            # OpenAI API'sine çağrı yapıyoruz
             response = self.client.chat.completions.create(
-                model="gpt-4o-mini", # Hızlı ve uygun maliyetli, güçlü bir model
+                model="gpt-4o-mini",
                 messages=[
                     {"role": "system", "content": "You are an expert exam grader AI."},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=0.0, # Tutarlılık için temperature'ı 0 yapıyoruz
-                response_format={"type": "json_object"} # JSON çıktısı istediğimizi belirtiyoruz
+                temperature=0.0,
+                response_format={"type": "json_object"}
             )
             llm_raw_response = response.choices[0].message.content
-            
-            # Gelen cevabı JSON olarak parse etmeye çalışıyoruz
             llm_response_data = json.loads(llm_raw_response)
-            
-            # Basit bir doğrulama (VerifierAgent'ın MVP'si)
-            if sum(llm_response_data.get("rubric_breakdown", {}).values()) != llm_response_data.get("score"):
-                 issues.append("Score does not match the sum of rubric_breakdown.")
-            else:
-                 is_valid = True
 
-        except json.JSONDecodeError:
-            issues.append("LLM did not return a valid JSON object.")
         except Exception as e:
-            issues.append(f"An unexpected error occurred during LLM call: {str(e)}")
+            # Hata durumunda, sonraki ajanın incelemesi için boş bir sonuç oluşturuyoruz.
+            # VerifierAgent bu durumu yakalayacak.
+            print(f"LLM call or JSON parsing failed: {e}")
+            llm_response_data = {
+                "justification": f"LLM Error: {str(e)}",
+                "score": 0,
+                "rubric_breakdown": {}
+            }
+        
+        # VerifierAgent'ın işlemesi için varsayılan bir statü ile sonuç nesnesi oluştur.
+        initial_verifier_status = schemas.VerifierStatus(
+            valid=False, 
+            issues=["Verification has not been run yet."]
+        )
 
-        # Nihai GradingResult objesini oluşturuyoruz
         return schemas.GradingResult(
             job_id=job_id,
             student_id=student_answer.student_id,
@@ -78,12 +78,12 @@ class GraderAgent:
             score=llm_response_data.get("score", 0),
             max_score=question.max_score,
             rubric_breakdown=llm_response_data.get("rubric_breakdown", {}),
-            justification=llm_response_data.get("justification", "Error during processing."),
+            justification=llm_response_data.get("justification", "No justification provided."),
             advice_for_full_marks=llm_response_data.get("advice_for_full_marks", ""),
             llm_prompt=prompt,
             llm_raw_response=llm_raw_response,
             model="gpt-4o-mini",
             model_params={"temperature": 0.0, "response_format": {"type": "json_object"}},
             timestamp=datetime.utcnow(),
-            verifier_status=schemas.VerifierStatus(valid=is_valid, issues=issues)
+            verifier_status=initial_verifier_status
         )
