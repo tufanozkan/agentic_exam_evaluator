@@ -1,4 +1,6 @@
-from . import schemas
+# backend/app/agents/verifier_agent.py
+
+from .. import schemas
 
 class VerifierAgent:
     """

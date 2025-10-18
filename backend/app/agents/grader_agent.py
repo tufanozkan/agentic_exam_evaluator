@@ -1,3 +1,5 @@
+# backend/app/agents/grader_agent.py
+
 import openai
 import json
 from pathlib import Path
@@ -5,8 +7,8 @@ from typing import Dict, Any
 from datetime import datetime
 
 # Şemaları ve ayarları import ediyoruz
-from . import schemas
-from .config import settings
+from .. import schemas
+from ..config import settings
 
 class GraderAgent:
     def __init__(self):
@@ -16,11 +18,12 @@ class GraderAgent:
         self.client = openai.OpenAI(api_key=settings.OPENAI_API_KEY)
         
         # Prompt şablonunu dosyadan okuyoruz
-        current_dir = Path(__file__).parent  # evaluator.py'nin bulunduğu klasör
-        prompt_file = current_dir.parent / "prompts" / "grader_prompt.txt"
+        current_dir = Path(__file__).parent
+        prompt_file = current_dir.parent.parent / "prompts" / "grader_prompt.txt"
         
         with open(prompt_file, "r", encoding="utf-8") as f:
             self.prompt_template = f.read()
+
 
     def grade_question(
         self,
