@@ -1,140 +1,108 @@
-from fastapi import FastAPI, UploadFile, File, Form
-from typing import List, Optional
-import uuid
+# backend/app/main.py
 
-# Az önce oluşturduğumuz şemaları import ediyoruz
+import json
+from fastapi import FastAPI, UploadFile, File, BackgroundTasks, HTTPException
+from fastapi.responses import StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware # YENİ
+from typing import List
+from pathlib import Path # YENİ
+
 from . import schemas
+from .orchestrator import OrchestratorAgent
 
-# FastAPI uygulamasını oluşturuyoruz
+# --- Uygulama ve Ajanların Başlatılması ---
 app = FastAPI(
     title="AI-Driven Exam Evaluator Agent",
     description="An agentic system for automated exam assessment with explainability.",
-    version="0.1.0"
+    version="0.2.1" # Sürümü güncelledik
 )
 
-# --- Geçici In-Memory Veritabanı ---
-# StorageAgent'in MVP versiyonu. İşlerin durumunu takip eder.
-jobs_db = {}
+# --- YENİ: CORS (Cross-Origin Resource Sharing) Middleware ---
+# Bu, test_stream.html'in (farklı bir "origin") backend'e erişmesine izin verir.
+origins = [
+    "*", # Geliştirme için şimdilik herkese izin verelim.
+    # "http://localhost:5500",
+    # "http://127.0.0.1:5500",
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"], # Tüm metodlara izin ver (GET, POST, etc.)
+    allow_headers=["*"], # Tüm header'lara izin ver
+)
+
+orchestrator = OrchestratorAgent()
 
 
 @app.get("/", tags=["Health Check"])
 async def read_root():
-    """Sistemin ayakta olup olmadığını kontrol eden basit bir endpoint."""
     return {"status": "OK", "message": "Exam Evaluator Agent is running."}
 
-# --- API Endpoint İskeletleri ---
 
-@app.post("/api/jobs", status_code=202, tags=["Jobs"])
+# --- API ENDPOINT'LERİ ---
+
+@app.post("/api/jobs", status_code=202, response_model=schemas.JobStatus, tags=["Jobs"])
 async def create_assessment_job(
+    background_tasks: BackgroundTasks,
     answer_key: UploadFile = File(...),
     student_sheets: List[UploadFile] = File(...)
-) -> dict:
+):
+    job = orchestrator.create_job()
+    try:
+        file_paths = await orchestrator.save_uploaded_files(job.job_id, answer_key, student_sheets)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"File saving failed: {e}")
+    background_tasks.add_task(orchestrator.process_job, job.job_id, file_paths)
+    return schemas.JobStatus(job_id=job.job_id, status=job.status)
+
+
+# --- YENİ: Hızlı Test İçin Geliştirici Endpoint'i ---
+@app.post("/api/dev/start-sample-job", response_model=schemas.JobStatus, tags=["Development"])
+async def start_sample_job(background_tasks: BackgroundTasks):
     """
-    Cevap anahtarını ve öğrenci kağıtlarını yükleyerek yeni bir değerlendirme işi başlatır.
-    Hemen bir job_id döner, işleme arka planda başlar.
+    Her seferinde dosya yüklememek için, `test_files` klasöründeki
+    örnek PDF'lerle otomatik olarak bir iş başlatır.
     """
-    job_id = str(uuid.uuid4())
-    jobs_db[job_id] = {"status": "pending", "files": [f.filename for f in student_sheets]}
+    job = orchestrator.create_job()
     
-    # TODO: Arka plan görevini burada başlat (OrchestratorAgent'ı tetikle)
-    print(f"Job created with ID: {job_id}")
+    # Not: Bu endpoint'in çalışması için projenin ana dizininde 'test_files' klasörü
+    # ve içinde answer_key.pdf, student_1.pdf, student_2.pdf dosyaları olmalı.
+    # Çalışma dizinine bağlı kalmamak için proje kökünden mutlak path üretelim
+    # backend/app/main.py -> parents[2] proje kökü (../..)
+    base_path = Path(__file__).resolve().parents[2] / "test_files"
+    file_paths = {
+        "answer_key": base_path / "answer_key.pdf",
+        "student_sheets": [
+            base_path / "student_1.pdf",
+            base_path / "student_2.pdf" # İkinci öğrenciyi de ekleyelim
+        ]
+    }
     
-    return {"job_id": job_id, "status": "Job accepted and processing started."}
+    if not all(p.exists() for p in [file_paths["answer_key"]] + file_paths["student_sheets"]):
+        raise HTTPException(
+            status_code=404,
+            detail=f"Sample PDF files not found. Looked under: {base_path}"
+        )
+
+    background_tasks.add_task(orchestrator.process_job, job.job_id, file_paths)
+    return schemas.JobStatus(job_id=job.job_id, status=job.status)
 
 
 @app.get("/api/jobs/{job_id}/stream", tags=["Jobs"])
 async def stream_job_results(job_id: str):
-    """
-    Belirtilen işin sonuçlarını Server-Sent Events (SSE) ile canlı olarak yayınlar.
-    Frontend bu endpoint'i dinleyerek sonuçları anlık gösterir.
-    """
-    # TODO: StreamerAgent'ın mantığını buraya implemente et.
-    return {"status": "streaming_endpoint_ready", "job_id": job_id}
+    # Path parametresinden gelebilecek fazladan tırnakları temizle (ekstra güvenlik)
+    clean_job_id = job_id.strip().replace('"', '')
+    job = orchestrator.jobs.get(clean_job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail=f"Job '{clean_job_id}' not found")
 
-
-@app.post("/api/followup/{job_id}/{student_id}/{question_id}", tags=["Explainability"])
-async def handle_followup_query(
-    job_id: str,
-    student_id: str,
-    question_id: str,
-    query: schemas.GradingResult # Örnek, burası daha basit bir model olabilir
-) -> dict:
-    """
-    Bir değerlendirme sonucuna ilişkin takip sorularını cevaplar. ("Neden 8 aldım?")
-    """
-    # TODO: FollowUpQueryAgent'ın mantığını buraya implemente et.
-    return {"explanation": "Follow-up response will be generated here."}
-
-
-
-
-
-
-# backend/app/main.py dosyasının altına ekle
-
-# Ajanlarımızı import ediyoruz
-from .parser import parse_answer_key, parse_student_answers
-from .evaluator import GraderAgent
-from .reporting import ReportingAgent # YENİ
-from .verifier import VerifierAgent # YENİ
-
-# Ajan nesnelerini oluşturuyoruz
-grader = GraderAgent()
-reporter = ReportingAgent()
-verifier = VerifierAgent() # YENİ
-
-# ...
-
-@app.post("/api/test/grade-single-full-flow", response_model=schemas.FinalReport, tags=["Testing"])
-async def test_grade_single_full_flow(
-    answer_key_pdf: UploadFile = File(...),
-    student_sheet_pdf: UploadFile = File(...)
-):
-    """
-    Test amacıyla tam ve modüler bir akışı çalıştırır: Parse -> Grade -> VERIFY -> Feedback -> Summary.
-    """
-    # 1. Parse Agent
-    question_objects = parse_answer_key(answer_key_pdf.file)
-    student_answers = parse_student_answers(student_sheet_pdf.file, student_id="test_student_01")
-    first_question = question_objects[0]
-    first_answer = student_answers[0]
-    
-    # 2. Grader Agent
-    job_id = "test_job_verified_flow"
-    raw_grading_result = grader.grade_question(first_question, first_answer, job_id)
-
-    # 3. Verifier Agent - YENİ ADIM
-    verified_grading_result = verifier.verify_grading_result(raw_grading_result)
-    
-    # Orkestratörün bir sonraki adımı: Doğrulama başarısız olursa ne yapmalı?
-    # Şimdilik, sadece geri bildirim ajanı yine de çalışacak, ama normalde
-    # burada işi durdurabilir veya bir insan incelemesi için işaretleyebiliriz.
-    if not verified_grading_result.verifier_status.valid:
-        print(f"WARNING: Verification failed for Q{first_question.question_id}! Issues: {verified_grading_result.verifier_status.issues}")
-
-
-    # 4. Feedback Agent (Artık doğrulanmış sonucu kullanıyor)
-    feedback_text = reporter.generate_feedback_for_question(
-        grading_result=verified_grading_result,
-        student_answer_text=first_answer.student_answer_text
-    )
-    question_feedback = schemas.QuestionFeedback(
-        question_id=first_question.question_id,
-        feedback_text=feedback_text,
-        grading_result=verified_grading_result # Doğrulanmış sonucu ekle
-    )
-
-    # 5. Summary Agent (Artık doğrulanmış sonucu kullanıyor)
-    summary_text = reporter.generate_summary_report(all_graded_results=[verified_grading_result])
-    
-    # 6. Nihai Raporu Oluştur
-    final_report = schemas.FinalReport(
-        job_id=job_id,
-        student_id="test_student_01",
-        overall_score=verified_grading_result.score,
-        max_score=verified_grading_result.max_score,
-        summary_report_text=summary_text,
-        question_feedbacks=[question_feedback]
-    )
-    
-    return final_report
+    async def event_generator():
+        while True:
+            event: schemas.StreamEvent = await job.results_queue.get()
+            if event is None:
+                break
+            yield f"data: {event.model_dump_json()}\n\n"
+            
+    return StreamingResponse(event_generator(), media_type="text/event-stream")

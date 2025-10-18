@@ -1,6 +1,7 @@
 from pydantic import BaseModel, Field
 from typing import List, Dict, Any, Optional
 from datetime import datetime
+from typing import Union
 
 # --- Metadata Alt Modelleri ---
 # Bu modeller, verinin nereden geldiğini ve ne kadar güvenilir olduğunu belirtir.
@@ -72,3 +73,14 @@ class FinalReport(BaseModel):
     max_score: float
     summary_report_text: str
     question_feedbacks: List[QuestionFeedback]
+
+class StreamEvent(BaseModel):
+    """
+    SSE (Server-Sent Events) ile frontend'e gönderilecek standart event yapısı.
+    """
+    event: str # Örn: "partial_result", "student_done", "job_done", "error"
+    data: Dict[str, Any]
+
+class JobStatus(BaseModel):
+    job_id: str
+    status: str
