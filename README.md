@@ -38,12 +38,12 @@ graph TD
     C -->|Answer Key| D[Structured Answer Key];
     C -->|Student Sheets| E[Structured Student Answers];
 
-    subgraph Evaluation Loop (Per Student/Question)
+    subgraph Evaluation_Loop
         B --> F(GraderAgent);
         D --> F;
         E --> F;
         F -->|Raw Grade JSON| G(VerifierAgent);
-        G -- "If Invalid, Retry Correction" --> F;
+        G -- "If Invalid, Retry" --> F;
         G -- "If Valid" --> H(FeedbackGeneratorAgent);
     end
 
@@ -51,8 +51,8 @@ graph TD
     H --> J(ConnectionManager: Publish Result);
     J --> K[Frontend: Display Live Result];
 
-    subgraph Job End
-        B -- "When all questions are done" --> L(SummaryReportAgent);
+    subgraph Job_End
+        B -- "All questions done" --> L(SummaryReportAgent);
         I -- "Read all results" --> L;
         L --> I;
         L --> J;
