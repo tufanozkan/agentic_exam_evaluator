@@ -14,10 +14,10 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    template: '%s | AI Exam Evaluator',
-    default: 'AI Exam Evaluator', // Ana sayfanın başlığı
+    template: '%s | Yapay Zeka Sınav Değerlendirici',
+    default: 'Yapay Zeka Sınav Değerlendirici',
   },
-  description: "AI-driven assessment system by Tufan.",
+  description: "Tufan tarafından geliştirilmiş yapay zeka destekli değerlendirme sistemi.",
 };
 
 export default function RootLayout({

@@ -88,14 +88,14 @@ export default function HomePage() {
     return (
       <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="max-w-xl w-full bg-white p-8 rounded-lg shadow-md">
-            <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">AI Exam Evaluation System</h1>
+            <h1 className="text-2xl font-bold text-center text-gray-800 mb-6">Yapay Zeka Sınav Değerlendirme Sistemi</h1>
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">1. Upload Answer Key (PDF)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">1. Cevap Anahtarını Yükle (PDF)</label>
               <div className="mt-1 flex items-center space-x-4 p-4 border-2 border-gray-300 border-dashed rounded-md">
                 <FileText className="h-12 w-12 text-gray-400" />
                 <label htmlFor="answer-key-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500">
-                  <span>Choose a file</span>
+                  <span>Dosya Seç</span>
                   <input id="answer-key-upload" type="file" accept=".pdf" className="sr-only" onChange={(e) => handleFileChange(e, 'key')} />
                 </label>
                 {answerKeyFile && <p className="text-sm text-gray-600">{answerKeyFile.name} <CheckCircle className="inline h-4 w-4 text-green-500"/></p>}
@@ -103,15 +103,15 @@ export default function HomePage() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">2. Upload Student Sheets (One or Multiple PDF)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">2. Öğrenci Kağıtlarını Yükle (Bir veya Birden Fazla PDF)</label>
               <div className="mt-1 p-4 border-2 border-gray-300 border-dashed rounded-md">
                 <div className="flex items-center space-x-4">
                   <FileText className="h-12 w-12 text-gray-400" />
                   <label htmlFor="student-sheets-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-indigo-600 hover:text-indigo-500">
-                    <span>Add File</span>
+                    <span>Dosya Ekle</span>
                     <input id="student-sheets-upload" type="file" accept=".pdf" multiple className="sr-only" onChange={(e) => handleFileChange(e, 'student')} />
                   </label>
-                  {studentSheetFiles.length > 0 && <p className="text-sm text-gray-600">{studentSheetFiles.length} files selected.</p>}
+                  {studentSheetFiles.length > 0 && <p className="text-sm text-gray-600">{studentSheetFiles.length} dosya seçildi.</p>}
                 </div>
                 {studentSheetFiles.length > 0 && (
                   <ul className="mt-4 space-y-2">
@@ -137,7 +137,7 @@ export default function HomePage() {
             </div>
 
             <button type="submit" disabled={isLoading} className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-400">
-              {isLoading ? 'In Progress...' : 'Evaluate'}
+              {isLoading ? 'İşleniyor...' : 'Değerlendir'}
             </button>
 
             {error && <div className="text-red-600 text-sm flex items-center"><XCircle className="h-4 w-4 mr-2"/> {error}</div>}
@@ -150,10 +150,10 @@ export default function HomePage() {
   return (
     <main className="container mx-auto p-4 md:p-8">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Evaluation Results</h1>
-        <button onClick={() => setJobId(null)} className="text-sm text-indigo-600 hover:underline">Start New Evaluation</button>
+        <h1 className="text-3xl font-bold">Değerlendirme Sonuçları</h1>
+        <button onClick={() => setJobId(null)} className="text-sm text-indigo-600 hover:underline">Yeni Değerlendirme Başlat</button>
       </div>
-      <p className="text-gray-600 mb-4">Job ID: <span className="font-mono text-xs">{jobId}</span></p>
+      <p className="text-gray-600 mb-4">İşlem ID: <span className="font-mono text-xs">{jobId}</span></p>
       <ResultsDisplay events={events} />
     </main>
   );
