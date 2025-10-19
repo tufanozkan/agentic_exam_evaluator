@@ -41,30 +41,38 @@ Detaylı mimari için: `ARCHITECTURE.md`.
 
 ## Hızlı Başlangıç (Geliştirme)
 
-1. Ortam değişkeni oluşturun (backend kökünde `.env`):
+1.  **Repo'yu Klonlayın:**
 
-OPENAI_API_KEY=YOUR_OPENAI_KEY
+    ```bash
+    git clone [SENİN-GITHUB-REPO-LİNKİN]
+    cd exam-evaluator-agent
+    ```
 
-2. Backend bağımlılıklarını kurun ve çalıştırın:
+2.  **Backend Kurulumu:**
 
-```bash
-cd backend
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
-```
+    ```bash
+    cd backend
+    python -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt
+    cp .env.example .env
+    # .env dosyasını açıp kendi OpenAI API anahtarınızı girin
+    uvicorn app.main:app --reload
+    ```
 
-3. Frontend’i çalıştırın (yeni bir terminalde):
+3.  **Frontend Kurulumu (Yeni bir terminalde):**
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
+    ```bash
+    cd frontend
+    npm install
+    cp .env.local.example .env.local
+    # .env.local dosyasının içindeki adresin doğru olduğundan emin olun
+    npm run dev
+    ```
 
-4. Tarayıcıdan http://localhost:3000 adresine gidin. PDF’leri yükleyip değerlendirmeyi başlatın.
+    Uygulama `http://localhost:3000` adresinde çalışacaktır.
 
-5. İsteğe bağlı: Örnek iş başlatma (backend):
+4.  İsteğe bağlı: Örnek iş başlatma (backend):
 
 ```bash
 curl -X POST http://127.0.0.1:8000/api/dev/start-sample-job
