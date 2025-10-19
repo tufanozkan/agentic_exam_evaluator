@@ -119,6 +119,5 @@ sequenceDiagram
 ## Gelecek Geliştirmeler
 
 - Kalıcı depolama (PostgreSQL veya S3 benzeri) için `StorageAgent` adaptörü.
-- Parser için daha sağlam PDF/ocr pipeline (tesseract, layout detection).
 - Çoklu model desteği ve akıllı retry/backoff.
 - Çok kullanıcılı oturum ve yetkilendirme.
