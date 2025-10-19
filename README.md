@@ -8,10 +8,10 @@ Projeye başlamadan önce tüm süreci zihnimde kurgulayıp kağıt üzerinde de
 
 ## 🚀 Canlı Demo Linkleri
 
-| Servis                | URL                                                    |
-| :-------------------- | :----------------------------------------------------- |
-| **Frontend (Arayüz)** | `[SENİN-FRONTEND-URL'Nİ-BURAYA-YAPIŞTIR (Vercel)]`     |
-| **Backend (API)**     | `[SENİN-BACKEND-URL'Nİ-BURAYA-YAPIŞTIR (Render)]/docs` |
+| Servis                | URL                                                           |
+| :-------------------- | :------------------------------------------------------------ |
+| **Frontend (Arayüz)** | `[https://agentic-exam-evaluator.vercel.app/ (Vercel)]`       |
+| **Backend (API)**     | `[https://agentic-exam-evaluator.onrender.com (Render)]/docs` |
 
 ---
 
