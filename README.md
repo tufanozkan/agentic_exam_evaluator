@@ -33,33 +33,33 @@ Sistem, her biri belirli bir göreve odaklanmış otonom ajanların bir orkestra
 ### Akış Şeması
 ```mermaid
 graph TD
-    A[Frontend: PDF'leri Yükle] --> B(OrchestratorAgent: İşi Başlat);
+    A[Frontend: Upload PDFs] --> B(OrchestratorAgent: Start Job);
     B --> C{PDFParserAgent};
-    C -->|Cevap Anahtarı| D[Structured Answer Key];
-    C -->|Öğrenci Kağıtları| E[Structured Student Answers];
-    
-    subgraph Değerlendirme Döngüsü (Her Öğrenci/Soru İçin)
+    C -->|Answer Key| D[Structured Answer Key];
+    C -->|Student Sheets| E[Structured Student Answers];
+
+    subgraph Evaluation Loop (Per Student/Question)
         B --> F(GraderAgent);
         D --> F;
         E --> F;
-        F -->|Ham Not JSON| G(VerifierAgent);
-        G -- "Geçersizse Düzeltmeyi Dene" --> F;
-        G -- "Geçerliyse" --> H(FeedbackGeneratorAgent);
+        F -->|Raw Grade JSON| G(VerifierAgent);
+        G -- "If Invalid, Retry Correction" --> F;
+        G -- "If Valid" --> H(FeedbackGeneratorAgent);
     end
 
-    H --> I(StorageAgent: Sonucu Kaydet);
-    H --> J(ConnectionManager: Sonucu Yayınla);
-    J --> K[Frontend: Canlı Sonucu Göster];
+    H --> I(StorageAgent: Save Result);
+    H --> J(ConnectionManager: Publish Result);
+    J --> K[Frontend: Display Live Result];
 
-    subgraph İş Sonu
-        B -- "Tüm sorular bitince" --> L(SummaryReportAgent);
-        I -- "Tüm sonuçları oku" --> L;
+    subgraph Job End
+        B -- "When all questions are done" --> L(SummaryReportAgent);
+        I -- "Read all results" --> L;
         L --> I;
         L --> J;
     end
-    
-    M[Frontend: Takip Sorusu Sor] --> N(FollowUpQueryAgent);
-    I -- "İlgili sonucu getir" --> N;
+
+    M[Frontend: Ask Follow-up] --> N(FollowUpQueryAgent);
+    I -- "Fetch related result" --> N;
     N --> M;
 ```
 
