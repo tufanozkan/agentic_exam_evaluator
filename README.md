@@ -2,6 +2,10 @@
 
 Akıllı, açıklanabilir ve gerçek zamanlı sonuç akışıyla yazılı sınav değerlendirmesi yapan agentic mimaride bir sistem.
 
+## AI Araç Kullanımı
+
+Projeye başlamadan önce tüm süreci zihnimde kurgulayıp kağıt üzerinde detaylı bir şekilde planladım ve mimari tasarımı oluşturdum. Her aşamayı adım adım tanımladıktan sonra, bu tasarımı yapay zekaya aktararak eksik kısımların belirlenmesini ve tamamlanmasını sağladım. Prompt engineering konusunda aldığım eğitim sayesinde, her ajan için amaç, görev ve istekler gibi unsurları içeren kendi prompt şablonlarımı (template) oluşturdum; eksik veya iyileştirilmesi gereken noktalar için yapay zekadan destek alarak bu şablonları optimize ettim. AI’den gelen geri bildirimler doğrultusunda şemayı ve kodun çalışma mantığını güncelleyerek daha sağlam bir proje mimarisi ortaya çıkardım. Geliştirme sürecinde proje kurulumunu ve önizleme ortamını kendim oluşturarak olası hata risklerini en aza indirdim. Ardından hazırladığım flowchart doğrultusunda klasör yapısını, .py dosyalarını ve her bir fonksiyonun şablonlarını tasarladım. Kodun hatasız ve verimli çalışması için özellikle try-except bloklarının oluşturulmasında ve bazı frontend geliştirmelerinde yapay zekadan destek alarak hem teknik altyapıyı hem de kullanıcı deneyimini optimize ettim.
+
 ## Özellikler
 
 - PDF yükleme: Cevap anahtarı ve birden çok öğrenci PDF'i.
