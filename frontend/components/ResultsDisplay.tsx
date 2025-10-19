@@ -39,11 +39,13 @@ function QuestionResultCard({ result }: { result: GradingResultPayload }) {
     setCurrentQuery('');
 
     try {
-      const apiResponse = await fetch(`http://127.0.0.1:8000/api/followup/${result.job_id}/${result.student_id}/${result.question_id}`, {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+      const apiResponse = await fetch(`${apiUrl}/api/followup/${result.job_id}/${result.student_id}/${result.question_id}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: queryToSend }),
       });
+
       if (!apiResponse.ok) throw new Error('API request failed');
       const data = await apiResponse.json();
       setChatHistory(prev => [...prev, { role: 'ai', content: data.answer }]);

@@ -47,7 +47,7 @@ export default function HomePage() {
     studentSheetFiles.forEach(file => formData.append('student_sheets', file));
 
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/jobs', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/jobs`, {
         method: 'POST',
         body: formData,
       });
@@ -64,7 +64,9 @@ export default function HomePage() {
   const [events, setEvents] = useState<StreamEvent[]>([]);
   useEffect(() => {
     if (!jobId) return;
-    const socket = new WebSocket(`ws://127.0.0.1:8000/api/jobs/${jobId}/ws`);
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+    const wsUrl = apiUrl.replace(/^http/, 'ws');
+    const socket = new WebSocket(`${wsUrl}/api/jobs/${jobId}/ws`);
     socket.onopen = () => {
       console.log("WebSocket bağlantısı kuruldu");
       setIsLoading(false);
