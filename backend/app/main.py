@@ -118,3 +118,5 @@ async def websocket_endpoint(websocket: WebSocket, job_id: str):
             await websocket.receive_text()
     except Exception:
         manager.disconnect(job_id)
+
+#project root
