@@ -6,13 +6,23 @@ Akıllı, açıklanabilir ve gerçek zamanlı sonuç akışıyla yazılı sınav
 
 Projeye başlamadan önce tüm süreci zihnimde kurgulayıp kağıt üzerinde detaylı bir şekilde planladım ve mimari tasarımı oluşturdum. Her aşamayı adım adım tanımladıktan sonra, bu tasarımı yapay zekaya aktararak eksik kısımların belirlenmesini ve tamamlanmasını sağladım. Prompt engineering konusunda aldığım eğitim sayesinde, her ajan için amaç, görev ve istekler gibi unsurları içeren kendi prompt şablonlarımı (template) oluşturdum; eksik veya iyileştirilmesi gereken noktalar için yapay zekadan destek alarak bu şablonları optimize ettim. AI’den gelen geri bildirimler doğrultusunda şemayı ve kodun çalışma mantığını güncelleyerek daha sağlam bir proje mimarisi ortaya çıkardım. Geliştirme sürecinde proje kurulumunu ve önizleme ortamını kendim oluşturarak olası hata risklerini en aza indirdim. Ardından hazırladığım flowchart doğrultusunda klasör yapısını, .py dosyalarını ve her bir fonksiyonun şablonlarını tasarladım. Kodun hatasız ve verimli çalışması için özellikle try-except bloklarının oluşturulmasında ve bazı frontend geliştirmelerinde yapay zekadan destek alarak hem teknik altyapıyı hem de kullanıcı deneyimini optimize ettim.
 
-## Özellikler
+## 🚀 Canlı Demo Linkleri
 
-- PDF yükleme: Cevap anahtarı ve birden çok öğrenci PDF'i.
-- Agentic değerlendirme hattı: Parser → Grader → Verifier → Feedback → Summary.
-- Canlı sonuç: WebSocket ile her soru için anlık sonuçlar ve öğrenci özeti.
-- Açıklanabilirlik: Gerekçeler, rubrik kırılımı, tam puan için öneriler.
-- Takip soruları: Belirli soru/öğrenci bağlamında Q&A.
+| Servis                | URL                                                    |
+| :-------------------- | :----------------------------------------------------- |
+| **Frontend (Arayüz)** | `[SENİN-FRONTEND-URL'Nİ-BURAYA-YAPIŞTIR (Vercel)]`     |
+| **Backend (API)**     | `[SENİN-BACKEND-URL'Nİ-BURAYA-YAPIŞTIR (Render)]/docs` |
+
+---
+
+## ✨ Özellikler
+
+- **PDF Yükleme:** Tek bir cevap anahtarı ve birden fazla öğrenci sınav kağıdını PDF formatında kabul eder.
+- **Agentic Değerlendirme:** Her bir soru, modüler ve tekil sorumluluğa sahip otonom ajanlar tarafından değerlendirilir.
+- **Canlı Sonuç Akışı:** WebSocket kullanılarak, her bir sorunun değerlendirme sonucu tamamlandığı anda arayüze canlı olarak yansıtılır.
+- **Otomatik Düzeltme (Self-Correction):** `VerifierAgent`, `GraderAgent`'ın yaptığı mantıksal hataları (örn: puan/rubrik tutarsızlığı) tespit eder ve başka bir LLM çağrısı ile otomatik olarak düzeltmeye çalışır.
+- **Sohbet Tabanlı Takip Soruları:** Kullanıcılar, her bir not kartı üzerinden "Neden tam puan alamadım?" gibi sorular sorabilir ve ajan, sohbet geçmişini hatırlayarak bağlama uygun cevaplar verir.
+- **Detaylı Raporlama:** Her öğrenci için, güçlü ve zayıf yönlerini analiz eden, aksiyon odaklı tavsiyeler içeren bir özet rapor oluşturulur.
 
 Detaylı mimari için: `ARCHITECTURE.md`.
 
