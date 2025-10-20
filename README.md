@@ -10,7 +10,7 @@ Projeye başlamadan önce tüm süreci zihnimde kurgulayıp kağıt üzerinde de
 
 | Servis                | URL                                                           |
 | :-------------------- | :------------------------------------------------------------ |
-| **Frontend (Arayüz)** | `[https://agentic-exam-evaluator.vercel.app/ (Vercel)]`       |
+| **Frontend (Arayüz)** | `[https://agenticexamevaluatorr.netlify.app (Netlify)]`       |
 | **Backend (API)**     | `[https://agentic-exam-evaluator.onrender.com (Render)]/docs` |
 
 ---
