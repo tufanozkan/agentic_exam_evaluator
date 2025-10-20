@@ -74,7 +74,7 @@ class GraderAgent:
             question_id=question.question_id,
             question_text=question.question_text,
             student_answer_text=student_answer.student_answer_text,
-            
+            expected_answer=question.expected_answer,
             score=llm_response_data.get("score", 0),
             max_score=question.max_score,
             rubric_breakdown=llm_response_data.get("rubric_breakdown", {}),

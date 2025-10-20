@@ -50,6 +50,7 @@ class GradingResult(BaseModel):
     max_score: int
     question_text: str
     student_answer_text: str
+    expected_answer: str
     rubric_breakdown: Dict[str, float]
     justification: str
     advice_for_full_marks: str

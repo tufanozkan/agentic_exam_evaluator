@@ -106,10 +106,18 @@ class OrchestratorAgent:
                     await asyncio.to_thread(self.storage_agent.save_result, verified_result)
 
                 if all_results_for_student:
+                    total_score = sum(res.score for res in all_results_for_student)
+                    total_max_score = sum(res.max_score for res in all_results_for_student)
+
                     summary_text = await asyncio.to_thread(self.summary_agent.generate_summary_report, all_results_for_student)
                     student_done_event = schemas.StreamEvent(
                         event="student_summary",
-                        data={"student_id": student_id, "summary_report": summary_text}
+                        data={
+                            "student_id": student_id, 
+                            "summary_report": summary_text,
+                            "total_score": total_score,
+                            "total_max_score": total_max_score
+                        }
                     )
                     await manager.send_event_to_job(student_done_event.model_dump_json(), job_id)
 
