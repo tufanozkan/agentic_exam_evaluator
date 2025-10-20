@@ -31,6 +31,7 @@ Projeye başlamadan önce tüm süreci zihnimde kurgulayıp kağıt üzerinde de
 Sistem, her biri belirli bir göreve odaklanmış otonom ajanların bir orkestratör tarafından yönetildiği modüler bir mimari üzerine kurulmuştur. Bu yapı, sistemin esnekliğini, test edilebilirliğini ve genişletilebilirliğini artırır.
 
 ### Akış Şeması
+
 ```mermaid
 graph TD
     A[Frontend: Upload PDFs] --> B(OrchestratorAgent: Start Job);
@@ -64,6 +65,7 @@ graph TD
 ```
 
 ### Ajan Kataloğu
+
 - **`PDFParserAgent`**: Ham PDF dosyalarını yapısal metin nesnelerine dönüştürür.
 - **`NormalizerAgent`**: Metinleri temizler ve standartlaştırır.
 - **`GraderAgent`**: Her bir soruyu, rubriğe göre LLM kullanarak notlandırır ve detaylı bir JSON çıktısı üretir.
@@ -82,14 +84,17 @@ graph TD
 Sistem, değerlendirme sürecini birkaç temel mantık üzerine kurmuştur:
 
 #### Derecelendirme ve Geri Bildirim Mantığı
+
 Her bir soru, `GraderAgent`'a sunulur. Bu ajan, "Düşünce Zinciri" (Chain-of-Thought) adı verilen bir prompt tekniği kullanır. Notu doğrudan vermek yerine, önce her bir rubrik maddesini ayrı ayrı değerlendirir ve bu adımları bir `reasoning_steps` dizisine kaydeder. Nihai puan, bu adımların toplamından elde edilir. Bu yaklaşım, notlandırmanın tutarlılığını ve şeffaflığını en üst düzeye çıkarır.
 
 Not verildikten sonra, `FeedbackAgent` devreye girer. Bu ajan, "pedagojik bir sınav koçu" personasına bürünür ve ham notu, öğrenciye yönelik `Onaylama -> Açıklama -> Yol Gösterme` adımlarını izleyen, yapıcı ve motive edici bir geri bildirim metnine dönüştürür.
 
 #### Otomatik Düzeltme Mantığı
+
 `GraderAgent`'tan gelen sonuç, `VerifierAgent`'a gönderilir. Bu ajan, puan ile rubrik toplamı arasında bir tutarsızlık gibi kural tabanlı hataları kontrol eder. Bir hata bulursa, sistemi durdurmak yerine, hatayı ve orijinal çıktıyı başka bir LLM çağrısı ile "düzeltici" bir prompt'a gönderir. LLM'den gelen düzeltilmiş sonucu alarak akışa devam eder ve bu durumu "was_corrected: true" olarak işaretler. Bu, sistemin otonom ve kendi kendini iyileştiren bir yapıya sahip olduğunu gösterir.
 
 #### Takip Sorularının Ele Alınışı
+
 Bir kullanıcı bir soru kartı üzerinden takip sorusu sorduğunda, `FollowUpQueryAgent` devreye girer. Bu ajan, `StorageAgent`'ı kullanarak sadece o sorunun ilk değerlendirme bağlamını değil, aynı zamanda o soru için yapılmış **tüm önceki sohbet geçmişini** de alır. Tüm bu bilgiyi (ilk not + sohbet geçmişi + yeni soru) LLM'e tek bir prompt içinde sunarak, sohbetin devamlılığını ve bağlama uygunluğunu sağlar. Bu sayede her soru kartı, kendi hafızası olan küçük bir sohbet botuna dönüşür.
 
 ---
@@ -107,11 +112,13 @@ Bir kullanıcı bir soru kartı üzerinden takip sorusu sorduğunda, `FollowUpQu
 ## 🛠️ Hızlı Başlangıç (Yerelde Çalıştırma)
 
 1.  **Repo'yu Klonlayın:**
+
     ```bash
     git clone cd exam-evaluator-agent
     ```
 
 2.  **Backend Kurulumu:**
+
     ```bash
     cd backend
     python -m venv venv
@@ -150,4 +157,4 @@ Schema detayları için `backend/app/schemas.py`.
 
 ## Lisans
 
-Bu depo, proje sahibinin şartları doğrultusunda kullanılmaktadır.
+Bu depo, proje sahibinin "tufanozkan" şartları doğrultusunda kullanılmaktadır.
