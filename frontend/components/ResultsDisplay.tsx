@@ -75,7 +75,7 @@ function QuestionResultCard({ result }: { result: GradingResultPayload }) {
           <p className="italic text-sm text-gray-600 mt-1">{result.student_answer_text}</p>
         </div>
         <div>
-          <h4 className="font-semibold text-gray-800 text-sm">Beklenen Cevap:</h4>
+          <h4 className="font-semibold text-gray-800 text-sm">Cevap Anahtarı:</h4>
           <p className="italic text-sm text-gray-600 mt-1">{result.expected_answer}</p>
         </div>
       </div>
@@ -87,21 +87,23 @@ function QuestionResultCard({ result }: { result: GradingResultPayload }) {
       <div className="mt-4 space-y-3">
         {chatHistory.map((msg, index) => (
           <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
-            {msg.role === 'ai' && <div className="bg-indigo-600 text-white p-2 rounded-full flex-shrink-0"><Bot size={16} /></div>}
-            <div className={`p-3 rounded-lg max-w-xs ${msg.role === 'ai' ? 'bg-white' : 'bg-blue-500 text-white'}`}><p className="text-sm">{msg.content}</p></div>
+        {msg.role === 'ai' && <div className="bg-indigo-600 text-white p-2 rounded-full flex-shrink-0"><Bot size={16} /></div>}
+        <div className={`p-3 rounded-lg max-w-xs ${msg.role === 'ai' ? 'bg-black text-white' : 'bg-indigo-700 text-white'}`}>
+          <p className="text-sm">{msg.content}</p>
+        </div>
           </div>
         ))}
-        {isLoading && <p className="text-sm text-white mt-2 flex items-center"><Clock size={14} className="animate-spin mr-1"/> Yapay zeka düşünüyor...</p>}
+        {isLoading && <p className="text-sm text-black mt-2 flex items-center"><Clock size={14} className="animate-spin mr-1"/> Yapay zeka düşünüyor...</p>}
         <form onSubmit={handleFollowUp} className="flex items-center space-x-2 pt-2">
-          <input type="text" value={currentQuery} onChange={(e) => setCurrentQuery(e.target.value)} placeholder="Bu not hakkında bir soru sor..." className="flex-grow p-2 border border-gray-300 rounded-md text-sm text-white bg-black" disabled={isLoading} />
+          <input type="text" value={currentQuery} onChange={(e) => setCurrentQuery(e.target.value)} placeholder="Yapay Zekaya soru sor..." className="flex-grow p-2 border border-gray-300 rounded-md text-sm text-white bg-black" disabled={isLoading} />
           <button type="submit" className="bg-indigo-600 text-white p-2 rounded-md hover:bg-indigo-700 disabled:bg-gray-400" disabled={isLoading}><Send size={18} /></button>
         </form>
       </div>
       
       {/* Teknik Detaylar */}
       <details className="mt-3">
-        <summary className="cursor-pointer text-xs font-bold text-orange-500">Teknik Detayları Göster</summary>
-        <div className="mt-2 p-3 rounded text-xs text-gray-600 space-y-2">
+        <summary className="cursor-pointer text-sm font-bold text-blue-400">Teknik Detayları Göster</summary>
+        <div className="mt-2 p-3 rounded text-sm text-gray-600 space-y-2">
           <p><strong>Gerekçe:</strong> {result.justification}</p>
           {result.verifier_status.valid ? (<p className="text-green-600 flex items-center"><Check size={14} className="mr-1"/> Doğrulama Başarılı</p>) 
           : (<p className="text-red-600 flex items-center"><AlertCircle size={14} className="mr-1"/> Doğrulama Hatası: {result.verifier_status.issues.join(', ')}</p>)}

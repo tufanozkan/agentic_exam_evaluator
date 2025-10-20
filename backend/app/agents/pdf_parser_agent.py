@@ -2,51 +2,72 @@
 
 import pdfplumber
 import re
+import json
+import openai
 from typing import List
 from io import BytesIO
-from .. import schemas
+from pathlib import Path
+from .. import schemas, config
 from .normalizer_agent import NormalizerAgent
 
 class PDFParserAgent:
     def __init__(self):
-        #bu sınıfın bir parçası
         self.normalizer = NormalizerAgent()
+        
+        self.client = openai.OpenAI(api_key=config.settings.OPENAI_API_KEY)
+        prompt_file = Path(__file__).parent.parent.parent / "prompts" / "parser_prompt.txt"
+        with open(prompt_file, "r", encoding="utf-8") as f:
+            self.parser_prompt_template = f.read()
 
     def parse_answer_key(self, file_content: bytes) -> List[schemas.QuestionObject]:
+        #extract questions and answers
         file = BytesIO(file_content)
-        text = ""
+        raw_text = ""
         with pdfplumber.open(file) as pdf:
             for page in pdf.pages:
-                page_text = page.extract_text()
+                page_text = page.extract_text(x_tolerance=1, y_tolerance=3)
                 if page_text:
-                    #normalizer agent
-                    text += self.normalizer.normalize(page_text) + "\n"
-
+                    raw_text += page_text + "\n"
+        
+        prompt = self.parser_prompt_template.format(raw_text=raw_text)
+        
         questions = []
-        question_blocks = re.split(r'(?=Soru \d+:)', text)[1:]
-
-        for i, block in enumerate(question_blocks, 1):
-            try:
-                match = re.match(r'(Soru \d+:.*?[\?\.])(.*)', block, re.DOTALL)
-                if match:
-                    #normalizer agent
-                    question_text = self.normalizer.normalize(match.group(1))
-                    expected_answer = self.normalizer.normalize(match.group(2))
+        try:
+            response = self.client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.0,
+                response_format={"type": "json_object"}
+            )
+            response_data = json.loads(response.choices[0].message.content)
+            
+            #key or list?
+            if isinstance(response_data, dict):
+                #(example 'questions', 'data', veya first key))
+                key_to_list = next((k for k in response_data if isinstance(response_data[k], list)), None)
+                if key_to_list:
+                    extracted_list = response_data[key_to_list]
                 else:
-                    question_text = block.split('\n')[0]
-                    expected_answer = block.replace(question_text, '')
-                
+                    raise ValueError("LLM response did not contain a JSON array.")
+            elif isinstance(response_data, list):
+                extracted_list = response_data
+            else:
+                raise ValueError("LLM response is not a valid JSON array or object containing an array.")
+
+            for item in extracted_list:
                 questions.append(schemas.QuestionObject(
-                    question_id=f"Q{i}",
-                    question_text=question_text,
-                    expected_answer=expected_answer,
+                    question_id=item.get("question_id"),
+                    question_text=self.normalizer.normalize(item.get("question_text")),
+                    expected_answer=self.normalizer.normalize(item.get("expected_answer")),
                     max_score=10,
                     rubric={"dogruluk_ve_detay": 10},
-                    metadata=schemas.PDFMetadata(page=1, raw_confidence=0.90)
+                    metadata=schemas.PDFMetadata(page=1, raw_confidence=0.98) # Güveni artırdık
                 ))
-            except Exception as e:
-                print(f"Hata: Soru {i} (yeni parser) parse edilemedi. Hata: {e}")
-                continue
+        
+        except Exception as e:
+            print(f"Hata: LLM tabanlı cevap anahtarı parse edilirken sorun oluştu. Hata: {e}")
+            return []
+            
         return questions
 
     def parse_student_answers(self, file_content: bytes, student_id: str) -> List[schemas.StudentAnswerObject]:
