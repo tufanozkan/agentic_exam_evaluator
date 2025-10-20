@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Check, AlertCircle, Clock, PartyPopper, Send, Bot } from 'lucide-react';
 
-// --- TİP TANIMLAMALARI (GÜNCELLENDİ) ---
 interface GradingResultPayload {
   job_id: string;
   student_id: string;
@@ -12,7 +11,7 @@ interface GradingResultPayload {
   max_score: number;
   justification: string;
   expected_answer: string;
-  student_answer_text: string; // Bu alan eksikti, eklendi.
+  student_answer_text: string;
   friendly_feedback?: string;
   verifier_status: { valid: boolean; issues: string[]; };
 }
@@ -27,7 +26,6 @@ export interface StreamEvent {
   timestamp: string;
 }
 
-// --- SORU KARTI COMPONENT'İ (GÜNCELLENDİ) ---
 function QuestionResultCard({ result }: { result: GradingResultPayload }) {
   const [currentQuery, setCurrentQuery] = useState('');
   const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'ai', content: string }[]>([]);
@@ -60,7 +58,7 @@ function QuestionResultCard({ result }: { result: GradingResultPayload }) {
   
   return (
     <div className="border border-gray-300 p-4 rounded-md bg-gray-50">
-      {/* Başlık ve Puan */}
+      {/*title and score*/}
       <div className="flex justify-between items-center">
         <h3 className="font-bold text-lg text-gray-800">{result.question_id}</h3>
         <span className={`font-bold px-3 py-1 rounded-full text-sm ${result.score > result.max_score / 2 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
@@ -68,7 +66,7 @@ function QuestionResultCard({ result }: { result: GradingResultPayload }) {
         </span>
       </div>
 
-      {/* İSTEĞİN ÜZERİNE EKLENEN CEVAP KARŞILAŞTIRMA BÖLÜMÜ */}
+      {/*answers*/}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 mt-4 border-t border-gray-200 pt-3">
         <div>
           <h4 className="font-semibold text-gray-800 text-sm">Öğrencinin Cevabı:</h4>
@@ -80,10 +78,10 @@ function QuestionResultCard({ result }: { result: GradingResultPayload }) {
         </div>
       </div>
 
-      {/* Yapıcı Geri Bildirim */}
+      {/*feedback*/}
       {result.friendly_feedback && <p className="mt-4 bg-blue-50 border-l-4 border-blue-400 p-3 text-sm text-gray-700">{result.friendly_feedback}</p>}
       
-      {/* Sohbet Bölümü */}
+      {/*chat*/}
       <div className="mt-4 space-y-3">
         {chatHistory.map((msg, index) => (
           <div key={index} className={`flex items-start gap-3 ${msg.role === 'user' ? 'justify-end' : ''}`}>
@@ -100,7 +98,7 @@ function QuestionResultCard({ result }: { result: GradingResultPayload }) {
         </form>
       </div>
       
-      {/* Teknik Detaylar */}
+      {/*show tech details*/}
       <details className="mt-3">
         <summary className="cursor-pointer text-sm font-bold text-blue-400">Teknik Detayları Göster</summary>
         <div className="mt-2 p-3 rounded text-sm text-gray-600 space-y-2">
@@ -113,7 +111,6 @@ function QuestionResultCard({ result }: { result: GradingResultPayload }) {
   );
 }
 
-// --- ANA DISPLAY COMPONENT'İ (GÜNCELLENDİ) ---
 export default function ResultsDisplay({ events }: { events: StreamEvent[] }) {
     const jobStartedEvent = events.find(e => e.type === 'job_started');
     const totalQuestions = jobStartedEvent ? (jobStartedEvent.payload as JobStartedPayload).total_questions : 0;

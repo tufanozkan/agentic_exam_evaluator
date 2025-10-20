@@ -40,7 +40,7 @@ class GraderAgent:
         llm_raw_response = ""
         llm_response_data = {}
         
-        #bu agent doğrulama yapmıyor sadece llmden veri alma işi
+        #not verified, it only retrieves data from the LLM
         try:
             response = self.client.chat.completions.create(
                 model="gpt-4o-mini",
@@ -62,7 +62,7 @@ class GraderAgent:
                 "rubric_breakdown": {}
             }
         
-        #verifier agent başlangıç
+        #verifier agent start
         initial_verifier_status = schemas.VerifierStatus(
             valid=False, 
             issues=["Verification has not been run yet."]

@@ -29,7 +29,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-#tek orchestrator
+#one orchestrator
 orchestrator = OrchestratorAgent()
 follow_up_agent = FollowUpAgent(storage_agent=orchestrator.storage_agent)
 
@@ -75,7 +75,7 @@ async def create_assessment_job(
 async def start_sample_job(background_tasks: BackgroundTasks):
     job = orchestrator.create_job()
     
-    #kök dizin
+    #root
     project_root = Path(__file__).parent.parent.parent
     base_path = project_root / "test_files"
     
@@ -113,10 +113,8 @@ async def stream_job_results(job_id: str):
 async def websocket_endpoint(websocket: WebSocket, job_id: str):
     await manager.connect(websocket, job_id)
     try:
-        #bağlantı açık beklemede
+        #connection is open and waiting
         while True:
             await websocket.receive_text()
     except Exception:
         manager.disconnect(job_id)
-
-#project root

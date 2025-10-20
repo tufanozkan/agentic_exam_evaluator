@@ -61,7 +61,7 @@ class PDFParserAgent:
                     expected_answer=self.normalizer.normalize(item.get("expected_answer")),
                     max_score=10,
                     rubric={"dogruluk_ve_detay": 10},
-                    metadata=schemas.PDFMetadata(page=1, raw_confidence=0.98) # Güveni artırdık
+                    metadata=schemas.PDFMetadata(page=1, raw_confidence=0.98) #trust score
                 ))
         
         except Exception as e:

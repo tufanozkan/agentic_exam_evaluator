@@ -20,17 +20,17 @@ class FollowUpAgent:
         return "\n".join([f"{msg['role']}: {msg['content']}" for msg in history])
 
     def answer_query(self, job_id: str, student_id: str, question_id: str, user_question: str) -> str:
-        #storagetan al
+        #get from storage
         context_result = self.storage_agent.get_result(job_id, student_id, question_id)
         chat_history = self.storage_agent.get_chat_history(job_id, student_id, question_id)
 
         if not context_result:
             return "İlgili soru için bir değerlendirme sonucu bulunamadı."
             
-        #geçmişe ekle
+        #add to history
         chat_history.append({"role": "user", "content": user_question})
         
-        # promptu hazırla
+        #prepare prompt
         prompt = self.prompt_template.format(
             question_text=context_result.question_text,
             student_answer_text=context_result.student_answer_text,
@@ -44,7 +44,7 @@ class FollowUpAgent:
             question_id=question_id
         )
 
-        #llme sor
+        #llm call
         try:
             response = self.client.chat.completions.create(
                 model="gpt-4o-mini",
@@ -53,7 +53,7 @@ class FollowUpAgent:
             )
             ai_response = response.choices[0].message.content.strip()
             
-            #ai yanıtını kaydet
+            #save answer
             chat_history.append({"role": "ai", "content": ai_response})
             self.storage_agent.save_chat_history(job_id, student_id, question_id, chat_history)
             

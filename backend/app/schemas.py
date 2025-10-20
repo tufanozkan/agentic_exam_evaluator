@@ -80,7 +80,7 @@ class StreamEvent(BaseModel):
     """
     SSE (Server-Sent Events) ile frontend'e gönderilecek standart event yapısı.
     """
-    event: str # Örn: "partial_result", "student_done", "job_done", "error"
+    event: str #example: "partial_result", "student_done", "job_done", "error"
     data: Dict[str, Any]
 
 class JobStatus(BaseModel):

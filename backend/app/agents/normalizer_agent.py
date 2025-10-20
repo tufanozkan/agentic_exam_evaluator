@@ -7,6 +7,5 @@ class NormalizerAgent:
         """Metindeki fazla boşlukları temizler ve standart hale getirir."""
         if not text:
             return ""
-        #birden fazla boşluğu ve satır sonunu tek boşluğa indirge
         text = re.sub(r'\s+', ' ', text)
         return text.strip()

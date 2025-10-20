@@ -19,7 +19,7 @@ class VerifierAgent:
         print(f"--- VerifierAgent: Correction attempt for Q{result.question_id} ---")
         
         prompt = self.corrector_prompt_template.format(
-            original_json=result.llm_raw_response, #grader'ın ham çıktısı
+            original_json=result.llm_raw_response, #grader output
             issues="\n- ".join(issues)
         )
         
@@ -32,11 +32,11 @@ class VerifierAgent:
             )
             
             corrected_data = json.loads(response.choices[0].message.content)
-            
-            #orijinal sonuç nesnesini yeni, düzeltilmiş verilerle güncelle
+
+            #update the original result
             corrected_result = result.model_copy(update=corrected_data)
             
-            #düzeltme sonrası durumu kontrol et
+            #check status
             new_rubric_sum = sum(corrected_result.rubric_breakdown.values())
             if round(new_rubric_sum, 2) == round(corrected_result.score, 2):
                 corrected_result.verifier_status.valid = True
@@ -44,7 +44,7 @@ class VerifierAgent:
                 corrected_result.verifier_status.was_corrected = True
                 print(f"--- VerifierAgent: Correction SUCCESSFUL ---")
             else:
-                #düzeltme başarısız olduysa, orijinal hatayı koru
+                #keep the original error
                 corrected_result.verifier_status.valid = False
                 corrected_result.verifier_status.issues.append("Self-correction attempt failed.")
                 print(f"--- VerifierAgent: Correction FAILED ---")
@@ -54,7 +54,7 @@ class VerifierAgent:
 
         except Exception as e:
             print(f"--- VerifierAgent: Correction attempt threw an exception: {e} ---")
-            #düzeltme sırasında bir hata olursa, orijinal hatalı sonucu döndür
+            #return the original faulty result
             result.verifier_status.correction_attempts = 1
             result.verifier_status.issues.append(f"Self-correction failed with exception: {e}")
             return result
@@ -84,7 +84,7 @@ class VerifierAgent:
         result.verifier_status.issues = issues
         
         if not is_valid:
-            #sonuç geçerli değilse, düzeltmeyi dene
+            #if the result is invalid, attempt correction
             return self._attempt_correction(result, issues)
 
         return result
